@@ -81,20 +81,13 @@ public class PermintaanKirimActivity extends AppCompatActivity {
         loadingDialog = new LoadingDialog(this);
 
         getKalenderLibur();
-        checktanggaltunggal();
 
         listCheckoutCompany = getIntent().getParcelableArrayListExtra("listSeller");
         total = getIntent().getLongExtra("total",0);
         listBarang = getIntent().getParcelableArrayListExtra("listbarang");
         company_id_seller = getIntent().getIntExtra("id_company_seller",0);
         tipe_pengiriman = getIntent().getStringExtra("tipe_pengiriman");
-        tgl_kirim = getIntent().getStringExtra("tgl_kirim");
-
-        if (tgl_kirim.equals("dd/mm/yyyy")){
-            tvTanggal1.setText("dd/mm/yyyy");
-        }else{
-            tvTanggal1.setText(tgl_kirim);
-        }
+        tgl_kirim = getIntent().getStringExtra("tanggal");
 
         rvPermintaanKirim = findViewById(R.id.rvTanggalKirim);
         rblist = findViewById(R.id.rbList);
@@ -102,6 +95,10 @@ public class PermintaanKirimActivity extends AppCompatActivity {
 
         cvTanggal1 = findViewById(R.id.cvTanggal1);
         tvTanggal1 = findViewById(R.id.tvTanggal1);
+
+        if (!tgl_kirim.equals("")){
+            tvTanggal1.setText(tgl_kirim);
+        }
 
         rvPermintaanKirim.setVisibility(GONE);
         final RadioButton rbTunggal = findViewById(R.id.rbTunggal);
@@ -148,11 +145,11 @@ public class PermintaanKirimActivity extends AppCompatActivity {
                     return;
                 }
                 else {
-//                    saveSendDate();
-                    Log.d("ido", "cek isi array: "+listTanggalKirim.size());
-                    for (int i=0; i<listTanggalKirim.size(); i++){
-                        Log.d("ido", "cek isi array: "+listTanggalKirim.get(i).getTglKirim());
-                    }
+                    saveSendDate();
+//                    Log.d("ido", "cek isi array: "+listTanggalKirim.size());
+//                    for (int i=0; i<listTanggalKirim.size(); i++){
+//                        Log.d("ido", "cek isi array: "+listTanggalKirim.get(i).getTglKirim());
+//                    }
                 }
                 lastClickTime= SystemClock.elapsedRealtime();
             }
@@ -211,8 +208,13 @@ public class PermintaanKirimActivity extends AppCompatActivity {
             }
         }else {
             for (int i=0; i<listBarang.size(); i++){
-                for (int j=0; j<2; j++){
+                loopQuery = loopQuery + "("+listBarang.get(i).getId()+", "+1+", '"+tanggalTunggal+"', "+listBarang.get(i).getQty()+", '"+tipeKirim+"')";
 
+                if(i< listTanggalKirim.size()-1){
+                    loopQuery = loopQuery.concat(",");
+                }
+                else{
+                    loopQuery = loopQuery.concat(" on conflict (master_cart_id, line_id) do update set tgl_permintaan_kirim = excluded.tgl_permintaan_kirim");
                 }
             }
         }
@@ -444,7 +446,60 @@ public class PermintaanKirimActivity extends AppCompatActivity {
         }
     }
 
-    private void checktanggaltunggal(){
+    private void CheckTanggal(final int id_master_cart, String tipePengiriman){
+        String query = "select count(id) from gcm_tanggal_kirim gtk where master_cart_id = "+id_master_cart+" and tipe_pengiriman = '"+tipePengiriman+"'";
+        try{
+            Call<JsonObject> checktgl = RetrofitClient
+                    .getInstance()
+                    .getApi()
+                    .request(new JSONRequest(QueryEncryption.Encrypt(query)));
+            checktgl.enqueue(new Callback<JsonObject>() {
+                @Override
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    if (response.isSuccessful()){
+                        String status = response.body().getAsJsonObject().get("status").getAsString();
+                        if (status.equals("success")){
+                            JsonArray jsonArray = response.body().getAsJsonObject().get("data").getAsJsonArray();
+                            int count = jsonArray.get(0).getAsJsonObject().get("count").getAsInt();
+                            if (count>0){
+                                deletetgl(id_master_cart);
+                            }
+                        }
+                    }
+                }
 
+                @Override
+                public void onFailure(Call<JsonObject> call, Throwable t) {
+
+                }
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void deletetgl(int master_cart_id){
+        String query = "delete from gcm_tanggal_kirim where master_cart_id in ("+master_cart_id+")";
+        try{
+            Call<JsonObject> deletetgl = RetrofitClient
+                    .getInstance()
+                    .getApi()
+                    .request(new JSONRequest(QueryEncryption.Encrypt(query)));
+            deletetgl.enqueue(new Callback<JsonObject>() {
+                @Override
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    if (response.isSuccessful()){
+
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<JsonObject> call, Throwable t) {
+
+                }
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }

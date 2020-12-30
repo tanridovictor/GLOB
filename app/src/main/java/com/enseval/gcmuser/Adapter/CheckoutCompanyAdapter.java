@@ -124,6 +124,8 @@ public class CheckoutCompanyAdapter extends RecyclerView.Adapter<CheckoutCompany
         str.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 13, str.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         holder.tvNamaPerusahaan.setText(str);
 
+        Log.d(TAG, "tanggal permintaan kirim edit: "+listTanggalKirim.get(0).getTgl_permintaan_kirim_edit());
+
         //untuk menampilkan dan mengupdate payment
         int i = 0;
         while (i<listPayment.size()){
@@ -202,6 +204,7 @@ public class CheckoutCompanyAdapter extends RecyclerView.Adapter<CheckoutCompany
         holder.rvCheckoutBarang.setAdapter(holder.checkoutBarangAdapter);
 
         Log.d(TAG, "onBindViewHolder: " + company.getListCart());
+
 
         holder.alamatShipto.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -345,6 +348,7 @@ public class CheckoutCompanyAdapter extends RecyclerView.Adapter<CheckoutCompany
 //                    dpd.getDatePicker().setMaxDate(System.currentTimeMillis() + (1000*60*60*24*20)+(1000*60*60*24*10));
 //                    dpd.show();
 
+                    Log.d(TAG, "cek isi list kirim: "+listTanggalKirim.size());
                     Intent i = new Intent(_context, PermintaanKirimActivity.class);
                     i.putParcelableArrayListExtra("listSeller", listCheckoutCompany);
                     i.putExtra("total", total);
@@ -359,7 +363,7 @@ public class CheckoutCompanyAdapter extends RecyclerView.Adapter<CheckoutCompany
                         if(listTanggalKirim.get(l).getNama_perusahaan().equals(company.getNamaPerusahaan())){
                             if (listTanggalKirim.get(l).getTipe_pengiriman().equals("tunggal")){
                                 tipe_pengiriman = "tunggal";
-                                tgl_kirim = listTanggalKirim.get(l).getTgl_permintaan_kirim_edit();
+                                tgl_kirim = listTanggalKirim.get(0).getTgl_permintaan_kirim_edit();
                             }else if (listTanggalKirim.get(l).getTipe_pengiriman().equals("multi")){
                                 tipe_pengiriman = "multi";
                             }else{
@@ -369,7 +373,8 @@ public class CheckoutCompanyAdapter extends RecyclerView.Adapter<CheckoutCompany
                         l++;
                     }
                     i.putExtra("tipe_pengiriman", tipe_pengiriman);
-                    i.putExtra("tgk_kirim", tgl_kirim);
+                    Log.d(TAG, "onClick: "+tgl_kirim+" "+tipe_pengiriman);
+                    i.putExtra("tanggal", tgl_kirim);
                     _context.startActivity(i);
                 }
             });
